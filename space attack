@@ -1,0 +1,201 @@
+import pygame, sys
+
+# setting up foundations & game window
+from pygame.locals import *
+mainClock = pygame.time.Clock()
+# frames per second - how fast game runs
+FPS = 60
+
+pygame.init()
+pygame.display.set_caption('Space Attack')
+screen = pygame.display.set_mode((650, 650), 0, 32)
+
+# setting up layout & game feature designs
+font = pygame.font.Font('Alphakind.ttf', 30)
+background = pygame.image.load('galaxy.jpg')
+title = pygame.image.load('titleresize.png')
+# player's character
+player_ship = pygame.image.load('ship2.png')
+
+
+click = False
+
+    # adding text function
+def displayed_text(text, font, colour, surface, x, y):
+    textobj = font.render(text, 1, colour)
+    textrect = textobj.get_rect()
+    textrect.topleft = (x, y)
+    surface.blit(textobj, textrect)
+
+# runs as default screen
+def main_menu():
+    while True:
+
+        # Screen layout/visuals (bg, title)
+        screen.fill((0, 0, 0))
+        screen.blit(background, (0, 0))
+        screen.blit(title, (127,75))
+        # returns mouse x,y positions
+        mouse_xy = pygame.mouse.get_pos()
+
+        # Creating the button position in menu
+        # (x position, y position), (width, height)
+        control_button = pygame.Rect((110, 325), (190, 50))
+        highscore_button = pygame.Rect((110, 425), (190, 50))
+        play_button = pygame.Rect((350, 425), (190, 50))
+
+        # buttons ui and text
+        # colour
+        pygame.draw.rect(screen, (55, 164, 244), control_button)
+        # colour, x position, y position
+        displayed_text("CONTROL", font, (255, 255, 255), screen, 140, 330)
+        pygame.draw.rect(screen, (55, 164, 244), play_button)
+        displayed_text("PLAY", font, (255, 255, 255), screen, 410, 430)
+        pygame.draw.rect(screen, (55, 164, 244), highscore_button)
+        displayed_text("HIGHSCORE", font, (255, 255, 255), screen, 126, 430)
+
+        click = False
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+                click = True
+
+        if control_button.collidepoint(mouse_xy) and click:
+            control()
+        if play_button.collidepoint(mouse_xy) and click:
+            play()
+        if highscore_button.collidepoint(mouse_xy) and click:
+            highscore()
+
+        pygame.display.update()
+        # set FPS ensures speed consistency through all devices
+        mainClock.tick(FPS)
+
+def highscore():
+    running = True
+    while running:
+
+        # Screen layout/visuals (bg, title)
+        screen.fill((0, 0, 0))
+        screen.blit(background, (0, 0))
+        screen.blit(title, (127, 30))
+        # returns mouse x,y positions
+        mouse_xy = pygame.mouse.get_pos()
+
+        # back button ui
+        back_button = pygame.Rect((30, 570), (190, 50))
+        pygame.draw.rect(screen, (55, 164, 244), back_button)
+        displayed_text("BACK", font, (255, 255, 255), screen, 89, 576)
+
+        key = pygame.key.get_pressed()
+        for event in pygame.event.get():
+            # crossing off window quit the game
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            # alternate way of going back to main (ESC button)
+            elif key[pygame.K_ESCAPE]:
+                    running = False
+            # all conditions must be met for back button to work
+            elif event.type == MOUSEBUTTONDOWN and back_button.collidepoint(mouse_xy) and event.button == 1:
+                    click = True                    # pressing back button leads to main menu
+                    running = False                 # by ending function
+
+        pygame.display.update()
+        mainClock.tick(FPS)
+
+def control():
+    running = True
+    while running:
+
+        # loads in image to be used later
+        controls_img = pygame.image.load('controls.png')
+        # Screen layout/visuals (bg, title)
+        screen.fill((0, 0, 0))
+        screen.blit(background, (0, 0))
+        screen.blit(title, (127, 30))
+        screen.blit(controls_img, (73, 178))
+        mouse_xy = pygame.mouse.get_pos()
+
+        # back button ui
+        back_button = pygame.Rect((30, 570), (190, 50))
+        pygame.draw.rect(screen, (55, 164, 244), back_button)
+        displayed_text("BACK", font, (255, 255, 255), screen, 89, 576)
+
+        key = pygame.key.get_pressed()
+        for event in pygame.event.get():
+            # crossing off window quit the game
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            # alternate way of going back to main (ESC button)
+            elif key[pygame.K_ESCAPE]:
+                    running = False
+            # all conditions must be met for back button to work
+            elif event.type == MOUSEBUTTONDOWN and back_button.collidepoint(mouse_xy) and event.button == 1:
+                    click = True                    # pressing back button leads to main menu
+                    running = False                 # by ending function
+
+
+        pygame.display.update()
+        mainClock.tick(FPS)
+
+# contains shared attributes(properties) between enemy and player
+class entity:
+    def __init__(self, x, y, health= 100):
+        self.x = x
+        self.y = y
+        self.health = health
+        self.entity_img = None
+        self.bullet_img = None
+        self.bullet = []
+        self.cool_down_counter = 0
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, (255,255,255), (self.x, self.y, 50, 50))
+
+
+def play():
+    running = True
+    while running:
+        # setting up default lives & starting score
+        lives = 3
+        score = 0
+        # determines speed at which player moves in
+        # number = pixels
+        p_movement = 5
+
+        screen.fill((0, 0, 0))
+        screen.blit(background, (0, 0))
+
+        # adding game features: lives and Highscore count
+        # embedding variable into string
+        displayed_text(f"Lives: {lives}", font, (255, 255, 255), screen, 530, 15)
+        displayed_text(f"Highscore: {score}", font, (255, 255, 255), screen, 15, 15)
+
+        # load players character & position
+        player = entity(300, 465)
+        player.draw(screen)
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                    running = False
+
+        key = pygame.key.get_pressed()
+        if key[pygame.K_a]:
+            player.x -= p_movement
+        if key[pygame.K_d]:
+            player.x += p_movement
+        if key[pygame.K_w]:
+            player.y -= p_movement
+        if key[pygame.K_s]:
+            player.y += p_movement
+
+
+        pygame.display.update()
+        mainClock.tick(FPS)
