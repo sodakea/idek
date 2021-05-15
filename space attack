@@ -1,4 +1,5 @@
 import pygame, sys
+import random
 
 # setting up foundations & game window
 from pygame.locals import *
@@ -8,14 +9,18 @@ FPS = 60
 
 pygame.init()
 pygame.display.set_caption('Space Attack')
-screen = pygame.display.set_mode((650, 650), 0, 32)
+width, height = 650, 650
+screen = pygame.display.set_mode((width, height), 0, 32)
 
 # setting up layout & game feature designs
 font = pygame.font.Font('Alphakind.ttf', 30)
 background = pygame.image.load('galaxy.jpg')
 title = pygame.image.load('titleresize.png')
-# player's character
+
+# entity sprites (player, enemy, bullet visuals)
 player_ship = pygame.image.load('ship2.png')
+enemy_ship = pygame.image.load('enemy2.png')
+bullet = pygame.image.load('bullet.png')
 
 
 click = False
@@ -154,19 +159,47 @@ class entity:
         self.cool_down_counter = 0
 
     def draw(self, screen):
-        pygame.draw.rect(screen, (255,255,255), (self.x, self.y, 50, 50))
+        screen.blit(self.entity_img, (self.x, self.y))
+
+class Player(entity):
+    def __init__(self, x, y, health=100):
+        super().__init__(x, y, health)
+        self.entity_img = player_ship
+        self.bullet_img = bullet
+        self.mask = pygame.mask.from_surface(self.entity_img)
+        self.max_health = health
+
+class Enemy(entity):
+    def __init__(self, x, y, health=100):
+        super().__init__(x, y, health)
+        self.entity_img = enemy_ship
+        self.bullet_img = bullet
+        self.mask = pygame.mask.from_surface(self.entity_img)
+        self.max_health = health
+
+    def movement(self, move):
+        self.y += move
 
 
 def play():
     running = True
-    while running:
-        # setting up default lives & starting score
-        lives = 3
-        score = 0
-        # determines speed at which player moves in
-        # number = pixels
-        p_movement = 5
+    enemies = []
+    wave_length = 10
+    for enemy in enemies:
+        Enemy.draw(screen)
 
+    # load players character & position
+    player = Player(300, 465)
+    player.draw(screen)
+    # setting up default lives & starting score
+    lives = 3
+    score = 0
+    # determines speed at which player & enemy moves in
+    # number = pixels
+    p_movement = 5
+    e_movement = 2.3
+
+    while running:
         screen.fill((0, 0, 0))
         screen.blit(background, (0, 0))
 
@@ -175,9 +208,13 @@ def play():
         displayed_text(f"Lives: {lives}", font, (255, 255, 255), screen, 530, 15)
         displayed_text(f"Highscore: {score}", font, (255, 255, 255), screen, 15, 15)
 
-        # load players character & position
-        player = entity(300, 465)
-        player.draw(screen)
+        if len(enemies) <= 0:
+            for i in range(wave_length):
+                enemy = Enemy(random.randrange(50, width-50), random.randrange(-500, -100))
+                enemies.append(enemy)
+
+        for enemy in enemies:
+            enemy.movement(e_movement)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -187,15 +224,21 @@ def play():
                     running = False
 
         key = pygame.key.get_pressed()
-        if key[pygame.K_a]:
-            player.x -= p_movement
-        if key[pygame.K_d]:
-            player.x += p_movement
-        if key[pygame.K_w]:
-            player.y -= p_movement
-        if key[pygame.K_s]:
-            player.y += p_movement
+        # !=  xor gate
+        if (key[pygame.K_w] != key[pygame.K_UP]) and player.y - p_movement > -30:
+            player.y -= p_movement                    # player ship movement up
+        if (key[pygame.K_s] != key[pygame.K_DOWN]) and player.y + p_movement + 110 < height:
+            player.y += p_movement                    # player ship movement down
+        if (key[pygame.K_a] != key[pygame.K_LEFT]) and player.x - p_movement > -35:
+            player.x -= p_movement                    # player ship movement left
+        if (key[pygame.K_d] != key[pygame.K_RIGHT]) and player.x + p_movement + 124 < width:
+            player.x += p_movement                    # player ship movement right
 
-
+        enemy.draw(screen)
+        player.draw(screen)
         pygame.display.update()
         mainClock.tick(FPS)
+
+
+
+main_menu()
